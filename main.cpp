@@ -17,8 +17,8 @@ void* sleeping( void* arg)
 {
 	for (int i = 0; i < 10; ++i)
 	{
-		std::cout << "Sleeping ... " << i << "\n";
 		sleep(1);
+		std::cout << "Sleeping ... " << i << "\n";
 	}
 
 	return nullptr;
@@ -27,12 +27,16 @@ void* sleeping( void* arg)
 
 void* wakingUp(void* arg)
 {
-	for (int i = 0; i < 10; ++i)
+	int* iptr = static_cast<int*>(arg);
+
+	while (*iptr != 10)
 	{
-		std::cout << "Waking up ... " << i << "\n";
 		sleep(2);
+		std::cout << "Waking up ... " << *iptr << "\n";
+		(*iptr)++;
 	}
 
+	*iptr = 0;
 	return nullptr;	
 }
 
@@ -41,8 +45,8 @@ void awake()
 {
 	for (int i = 0; i < 5; ++i)
 	{
-		std::cout << "I'm awake ... " << i << "\n";
 		sleep(3);
+		std::cout << "I'm awake ... " << i << "\n";
 	}
 }
 
@@ -51,22 +55,27 @@ int main()
 {
 	std::signal(SIGINT, signalHandler);
 
+	int* i = 0;
 
+	// thread creating
 	std::array<pthread_t, NUMBER_OF_THREADS> threads;
-	std::cout << "Creating thread number: 2.\n";
-	pthread_create(&threads.at(0), nullptr, wakingUp, nullptr );
-
 	std::cout << "Creating thread number: 1.\n";
-	pthread_create(&threads.at(1), nullptr, sleeping, nullptr );
-	
+	pthread_create(&threads.at(0), nullptr, wakingUp, &i );
+	std::cout << "i is still: " << i << "\n";
 
+	std::cout << "Creating thread number: 2.\n";
+	//pthread_create(&threads.at(1), nullptr, sleeping, nullptr );
+	
+	// normal call of a function
 	awake();
 
 	// wait for everythread to be finished before end of program
-	for (int i = 0; i < threads.size(); ++i)
+	for (int j = 0; j < threads.size(); ++j)
 	{
-		pthread_join(threads.at(i), nullptr);
+		pthread_join(threads.at(j), nullptr);
 	}
 
+
+	// terminate the program
 	return 0;			
 }
