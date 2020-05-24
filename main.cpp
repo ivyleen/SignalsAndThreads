@@ -58,7 +58,8 @@ int main()
 {
 	std::signal(SIGINT, signalHandler);
 	std::signal(SIGTERM, signalHandler);
-	std::signal(SIGKILL, signalHandler);
+	// it will not work because the KILL signal is a command
+	//std::signal(SIGKILL, signalHandler);
 
 	void* i = 0;	
 
