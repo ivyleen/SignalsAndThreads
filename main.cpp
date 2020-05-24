@@ -8,8 +8,9 @@ const int NUMBER_OF_THREADS = 2;
 
 void signalHandler (int sigNum)
 {
-	std::cout << "Signal (" << sigNum << ") - program interrupted.\n";
-	exit(sigNum);
+	std::cout << "Signal (" << sigNum << ") for program interrupted on process ID:" << getpid() << "\n";
+	//exit(sigNum);
+	write(STDOUT_FILENO, "I won't die\n", 13);
 }
 
 
@@ -56,6 +57,8 @@ void awake()
 int main()
 {
 	std::signal(SIGINT, signalHandler);
+	std::signal(SIGTERM, signalHandler);
+	std::signal(SIGKILL, signalHandler);
 
 	void* i = 0;	
 
