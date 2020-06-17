@@ -1,12 +1,11 @@
 #include <iostream>
 #include <csignal>
 #include <unistd.h>
-#include <array>
+#include <numeric>
 #include <thread>
+#include <vector>
 
-
-const int NUMBER_OF_THREADS = 2;
-static bool s_Sleeping = true;
+const unsigned int NUMBER_OF_THREADS = 2;
 
 
 void signalHandler (int sigNum)
@@ -16,42 +15,14 @@ void signalHandler (int sigNum)
 	write(STDOUT_FILENO, "I won't die\n", 13);
 }
 
-
-void sleeping()
+void sumBigNumber (uint64_t &sum, uint64_t begin, uint64_t end)
 {
-	using namespace std::literals::chrono_literals;
-
-	while ( s_Sleeping )
+	sum = 0;
+	for (uint64_t i = begin; i < end; ++i)
 	{
-		std::cout << "Sleeping ... on thread: " << std::this_thread::get_id() << std::endl;
-		std::this_thread::sleep_for(1s);
-	}
-
-}
-
-
-void wakingUp()
-{
-	using namespace std::literals::chrono_literals;
-
-	while ( s_Sleeping )
-	{
-		std::cout << "Sleeping ... on thread: " << std::this_thread::get_id() << std::endl;
-		std::this_thread::sleep_for(2s);
-	}
-		
-}
-
-
-void awake()
-{
-	for (int i = 0; i < 5; ++i)
-	{
-		sleep(3);
-		std::cout << "Main function call: I'm awake ... " << i << "\n";
+		sum += i;
 	}
 }
-
 
 int main()
 {
@@ -60,16 +31,28 @@ int main()
 	// it will not work because the KILL signal is a command
 	//std::signal(SIGKILL, signalHandler);
 
-	std::thread sleepingThread( sleeping );
-//	std::thread wakingUpThread( wakingUp );	
+	const unsigned int NUMBER_OF_ELEMENTS = 1000 * 1000 * 1000;
+	const unsigned int STEP = NUMBER_OF_ELEMENTS / NUMBER_OF_THREADS;
 
-	// normal call of a function
-	awake();
+	std::vector<uint64_t> sums (NUMBER_OF_THREADS);
 
-	//after main thread is over printing I'm awake stop the sleeping thread
-	s_Sleeping = false;
-	sleepingThread.join();
-	
+	std::thread first  (sumBigNumber, std::ref ( sums[0] ), 0, STEP );
+	std::thread second (sumBigNumber, std::ref ( sums[1] ), STEP, NUMBER_OF_ELEMENTS * STEP);
+
+	first.join();
+	second.join();
+
+	uint64_t sum = std::accumulate ( sums.begin(), sums.end(), uint64_t(0));
+	std::cout << "Partial sums: ";
+	for (auto n : sums)
+	{
+		std::cout << n << ", ";
+	}
+	std::cout << "\n";
+
+	std::cout << "Total sum: " << sum << std::endl;
+
+
 	// terminate the program
 	return 0;			
 }
