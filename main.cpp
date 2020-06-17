@@ -31,16 +31,27 @@ int main()
 	// it will not work because the KILL signal is a command
 	//std::signal(SIGKILL, signalHandler);
 
-	const unsigned int NUMBER_OF_ELEMENTS = 1000 * 1000 * 1000;
-	const unsigned int STEP = NUMBER_OF_ELEMENTS / NUMBER_OF_THREADS;
+	uint64_t NUMBER_OF_ELEMENTS = 1000 * 1000 * 1000;
+	uint64_t STEP = NUMBER_OF_ELEMENTS / NUMBER_OF_THREADS;
 
 	std::vector<uint64_t> sums (NUMBER_OF_THREADS);
+	std::vector<std::thread> threads;
 
-	std::thread first  (sumBigNumber, std::ref ( sums[0] ), 0, STEP );
-	std::thread second (sumBigNumber, std::ref ( sums[1] ), STEP, NUMBER_OF_ELEMENTS * STEP);
+	for (uint64_t i = 0; i < NUMBER_OF_THREADS; i++)
+	{
+		threads.push_back (std::thread (sumBigNumber, 
+					        std::ref ( sums[i] ), 
+						i * STEP, 
+						(i + 1) * STEP ) );
+	}
 
-	first.join();
-	second.join();
+	for ( std::thread &t : threads)
+	{
+		if ( t.joinable())
+		{
+			t.join();
+		}	
+	}
 
 	uint64_t sum = std::accumulate ( sums.begin(), sums.end(), uint64_t(0));
 	std::cout << "Partial sums: ";
